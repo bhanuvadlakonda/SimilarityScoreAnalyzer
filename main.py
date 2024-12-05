@@ -91,20 +91,60 @@ def main():
                 for col, (metric, value) in zip(cols, stats.items()):
                     col.metric(metric, value)
                 
-                # Visualization
-                st.markdown("### 📊 Similarity Distribution")
-                fig = px.histogram(
-                    processed_df,
-                    x="Similarity_Score",
-                    nbins=20,
-                    title="Distribution of Similarity Scores",
-                    labels={"Similarity_Score": "Similarity Score", "count": "Frequency"}
+                # Visualizations
+                st.markdown("### 📊 Similarity Analysis")
+                
+                # Create tabs for different visualizations
+                tab1, tab2 = st.tabs(["Distribution", "Scatter Plot"])
+                
+                with tab1:
+                    # Histogram
+                    fig_hist = px.histogram(
+                        processed_df,
+                        x="Similarity_Score",
+                        nbins=20,
+                        title="Distribution of Similarity Scores",
+                        labels={"Similarity_Score": "Similarity Score", "count": "Frequency"},
+                        color_discrete_sequence=['#FF4B4B']
+                    )
+                    fig_hist.update_layout(bargap=0.2)
+                    st.plotly_chart(fig_hist, use_container_width=True)
+                
+                with tab2:
+                    # Scatter plot of values
+                    fig_scatter = px.scatter(
+                        processed_df,
+                        x=first_column,
+                        y=second_column,
+                        color="Similarity_Score",
+                        title=f"Value Comparison with Similarity Scores",
+                        color_continuous_scale="RdYlBu",
+                        hover_data=[first_column, second_column, "Similarity_Score"]
+                    )
+                    st.plotly_chart(fig_scatter, use_container_width=True)
+                
+                # Add threshold filter
+                threshold = st.slider(
+                    "Filter by Similarity Score",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=0.0,
+                    step=0.1
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                
+                filtered_df = processed_df[processed_df["Similarity_Score"] >= threshold]
                 
                 # Results table
                 st.markdown("### 📋 Detailed Results")
-                st.dataframe(processed_df)
+                st.markdown(f"Showing {len(filtered_df)} rows with similarity score >= {threshold:.1f}")
+                st.dataframe(
+                    filtered_df.style.background_gradient(
+                        subset=["Similarity_Score"],
+                        cmap="RdYlBu",
+                        vmin=0,
+                        vmax=1
+                    )
+                )
                 
                 # Download button
                 st.markdown("### 💾 Download Results")
