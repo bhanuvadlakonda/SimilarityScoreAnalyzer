@@ -1,0 +1,22 @@
+.upload-section {
+    padding: 2rem;
+    border-radius: 0.5rem;
+    background-color: #f8f9fa;
+    margin-bottom: 2rem;
+}
+
+.results-section {
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    margin-top: 2rem;
+}
+
+.stButton > button {
+    width: 100%;
+}
+
+.styled-header {
+    color: #1f449c;
+    padding-bottom: 1rem;
+}
