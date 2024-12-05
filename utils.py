@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
-from difflib import SequenceMatcher
 from typing import Tuple, List
 import streamlit as st
+from sentence_transformers import SentenceTransformer, util
+import torch
 
 def preprocess_text(text: str) -> str:
     """
@@ -22,30 +23,50 @@ def preprocess_text(text: str) -> str:
     
     return text.strip()
 
+from sentence_transformers import SentenceTransformer
+import torch
+
+# Initialize the model (this will be done only once)
+@st.cache_resource
+def get_model():
+    return SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+
 def calculate_similarity(str1: str, str2: str) -> float:
     """
-    Calculate similarity ratio between two strings using SequenceMatcher with preprocessing.
-    Returns a value between 0 (completely different) and 1 (identical).
+    Calculate semantic similarity between two strings using sentence transformers.
+    Returns a value between 0 (completely different) and 1 (most similar).
     """
-    # Preprocess both strings
-    processed_str1 = preprocess_text(str1)
-    processed_str2 = preprocess_text(str2)
-    
-    # Handle empty strings
-    if not processed_str1 and not processed_str2:
-        return 1.0
-    if not processed_str1 or not processed_str2:
+    if pd.isna(str1) or pd.isna(str2):
         return 0.0
     
-    # Calculate similarity using SequenceMatcher
-    base_similarity = SequenceMatcher(None, processed_str1, processed_str2).ratio()
+    # Convert to string
+    str1 = str(str1).strip()
+    str2 = str(str2).strip()
     
-    # Check for partial matches
-    if processed_str1 in processed_str2 or processed_str2 in processed_str1:
-        # Boost similarity for partial matches
-        return min(1.0, base_similarity + 0.2)
+    # Handle empty strings
+    if not str1 and not str2:
+        return 1.0
+    if not str1 or not str2:
+        return 0.0
     
-    return base_similarity
+    try:
+        # Get model
+        model = get_model()
+        
+        # Encode sentences to get embeddings
+        embedding1 = model.encode(str1, convert_to_tensor=True)
+        embedding2 = model.encode(str2, convert_to_tensor=True)
+        
+        # Calculate cosine similarity
+        similarity = util.pytorch_cos_sim(embedding1, embedding2).item()
+        
+        # Normalize to [0,1] range (as cosine similarity is in [-1,1] range)
+        normalized_similarity = (similarity + 1) / 2
+        
+        return float(normalized_similarity)
+    except Exception as e:
+        st.error(f"Error calculating similarity: {str(e)}")
+        return 0.0
 
 def process_excel_file(
     df: pd.DataFrame,
