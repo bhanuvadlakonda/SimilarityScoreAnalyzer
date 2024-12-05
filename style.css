@@ -1,8 +1,18 @@
 .upload-section {
-    padding: 2rem;
-    border-radius: 0.5rem;
-    background-color: #f8f9fa;
     margin-bottom: 2rem;
+}
+
+.similarity-score {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+/* File uploader customization */
+[data-testid="stFileUploader"] {
+    border: 2px dashed #30363D;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
 }
 
 .results-section {

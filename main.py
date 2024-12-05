@@ -52,8 +52,9 @@ def main():
     st.markdown("Upload your Excel or CSV file and compare data between columns")
     
     # File upload section
-    st.markdown('<div class="upload-section">', unsafe_allow_html=True)
-    uploaded_file = st.file_uploader("Choose an Excel file", type=['xlsx', 'xls'])
+    st.markdown("## Upload File")
+    st.markdown("Select an Excel (.xlsx) or CSV file to analyze")
+    uploaded_file = st.file_uploader("", type=['xlsx', 'xls', 'csv'])
     
     if uploaded_file is not None:
         # Validate file
@@ -66,9 +67,8 @@ def main():
         try:
             df = pd.read_excel(uploaded_file)
             
-            # Display data preview
-            st.markdown("### Data Preview")
-            st.dataframe(df.head())
+            if uploaded_file.name:
+                st.markdown(f"📊 {uploaded_file.name}")
             
             # Column selection
             cols = df.columns.tolist()
@@ -112,11 +112,23 @@ def main():
                     'Similarity Score': [f"{score:.0%}" for score in processed_df['Similarity_Score']]
                 })
                 
-                # Display results
-                st.dataframe(
-                    results_df,
-                    hide_index=True,
-                    use_container_width=True
+                # Custom styling for the similarity score
+                def color_similarity(val):
+                    if isinstance(val, str) and val.endswith('%'):
+                        return f'<span class="similarity-score">{val}</span>'
+                    return val
+                
+                # Apply custom styling to the dataframe
+                st.write(
+                    results_df.style
+                    .format(lambda x: color_similarity(x))
+                    .set_properties(**{
+                        'text-align': 'left',
+                        'white-space': 'pre-wrap'
+                    })
+                    .hide(axis='index')
+                    .to_html(escape=False),
+                    unsafe_allow_html=True
                 )
                 
                 # Download button
