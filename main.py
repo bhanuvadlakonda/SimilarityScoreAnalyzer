@@ -7,10 +7,33 @@ from io import BytesIO
 
 # Page configuration
 st.set_page_config(
-    page_title="Excel Column Similarity Analyzer",
-    page_icon="📊",
-    layout="wide"
+    page_title="Similarity Score Analyzer",
+    page_icon="🔍",
+    layout="centered",
+    initial_sidebar_state="collapsed"
 )
+
+# Set dark theme
+st.markdown("""
+    <style>
+        .stApp {
+            background-color: #0E1117;
+            color: #FAFAFA;
+        }
+        .stButton>button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+        }
+        div[data-testid="stFileUploader"] {
+            border: 1px dashed #30363D;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # Load custom CSS
 with open('style.css') as f:
@@ -25,9 +48,8 @@ def get_download_link(df):
     return f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="processed_data.xlsx">Download Processed Excel File</a>'
 
 def main():
-    # Header
-    st.title("📊 Excel Column Similarity Analyzer")
-    st.markdown("Upload an Excel file and analyze similarity between columns")
+    st.title("Similarity Score Analyzer")
+    st.markdown("Upload your Excel or CSV file and compare data between columns")
     
     # File upload section
     st.markdown('<div class="upload-section">', unsafe_allow_html=True)
@@ -79,76 +101,33 @@ def main():
                     second_column
                 )
                 
-                # Display results section
-                st.markdown('<div class="results-section">', unsafe_allow_html=True)
+                # Results section
+                st.subheader("Results")
+                st.markdown("Similarity scores between selected columns")
                 
-                # Summary statistics
-                st.markdown("### 📈 Summary Statistics")
-                stats = get_summary_stats(similarity_scores)
+                # Prepare results dataframe
+                results_df = pd.DataFrame({
+                    'Column 1': processed_df[first_column],
+                    'Column 2': processed_df[second_column],
+                    'Similarity Score': [f"{score:.0%}" for score in processed_df['Similarity_Score']]
+                })
                 
-                # Display stats in columns
-                cols = st.columns(len(stats))
-                for col, (metric, value) in zip(cols, stats.items()):
-                    col.metric(metric, value)
-                
-                # Visualizations
-                st.markdown("### 📊 Similarity Analysis")
-                
-                # Create tabs for different visualizations
-                tab1, tab2 = st.tabs(["Distribution", "Scatter Plot"])
-                
-                with tab1:
-                    # Histogram
-                    fig_hist = px.histogram(
-                        processed_df,
-                        x="Similarity_Score",
-                        nbins=20,
-                        title="Distribution of Similarity Scores",
-                        labels={"Similarity_Score": "Similarity Score", "count": "Frequency"},
-                        color_discrete_sequence=['#FF4B4B']
-                    )
-                    fig_hist.update_layout(bargap=0.2)
-                    st.plotly_chart(fig_hist, use_container_width=True)
-                
-                with tab2:
-                    # Scatter plot of values
-                    fig_scatter = px.scatter(
-                        processed_df,
-                        x=first_column,
-                        y=second_column,
-                        color="Similarity_Score",
-                        title=f"Value Comparison with Similarity Scores",
-                        color_continuous_scale="RdYlBu",
-                        hover_data=[first_column, second_column, "Similarity_Score"]
-                    )
-                    st.plotly_chart(fig_scatter, use_container_width=True)
-                
-                # Add threshold filter
-                threshold = st.slider(
-                    "Filter by Similarity Score",
-                    min_value=0.0,
-                    max_value=1.0,
-                    value=0.0,
-                    step=0.1
-                )
-                
-                filtered_df = processed_df[processed_df["Similarity_Score"] >= threshold]
-                
-                # Results table
-                st.markdown("### 📋 Detailed Results")
-                st.markdown(f"Showing {len(filtered_df)} rows with similarity score >= {threshold:.1f}")
+                # Display results
                 st.dataframe(
-                    filtered_df.style.background_gradient(
-                        subset=["Similarity_Score"],
-                        cmap="RdYlBu",
-                        vmin=0,
-                        vmax=1
-                    )
+                    results_df,
+                    hide_index=True,
+                    use_container_width=True
                 )
                 
                 # Download button
-                st.markdown("### 💾 Download Results")
-                st.markdown(get_download_link(processed_df), unsafe_allow_html=True)
+                col1, col2 = st.columns([4, 1])
+                with col2:
+                    st.download_button(
+                        label="Download CSV",
+                        data=results_df.to_csv(index=False),
+                        file_name="similarity_results.csv",
+                        mime="text/csv"
+                    )
                 
                 st.markdown('</div>', unsafe_allow_html=True)
                 
